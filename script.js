@@ -126,6 +126,7 @@ function expandFirstBox() {
   }
 }
 
+// API URL (Routes same ahet mhanun badal kela nahi)
 const COURSE_API = `${BASE_URL}/api/courses`;
 
 /**
@@ -134,7 +135,7 @@ const COURSE_API = `${BASE_URL}/api/courses`;
 function formatDisplayDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; // जर तारीख नसेल तर आहे तसा मजकूर दाखवा
+    if (isNaN(date.getTime())) return dateStr; 
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -155,7 +156,7 @@ async function updateUpcomingBatch() {
         return;
     }
 
-    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
+    // शेवटचा (Latest) कोर्स मिळवणे
     const latest = courses[courses.length - 1];
     
     // HTML मधले Elements शोधणे
@@ -165,15 +166,15 @@ async function updateUpcomingBatch() {
       const spans = courseInfo.querySelectorAll("span");
       
       if (spans.length >= 2) {
-        // 1. Start Date अपडेट करा
-        const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
+        // 1. Start Date अपडेट करा (start_date1 वापरले आहे)
+        const startDate = latest.start_date1 ? formatDisplayDate(latest.start_date1) : "TBA";
         spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
-        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
-        const durationText = latest.duration ? latest.duration : "6 Months";
+        // 2. Duration अपडेट करा (duration1 वापरले आहे)
+        const durationText = latest.duration1 ? latest.duration1 : "6 Months";
         spans[1].innerHTML = `⏱ Duration: ${durationText}`;
         
-        console.log("Batch Data Updated:", latest);
+        console.log("Batch Data Updated from courses1 table:", latest);
       }
     }
   } catch (err) {
@@ -189,7 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. डेटाबेस मधून नवीन तारीख आणि ड्युरेशन आणा
     updateUpcomingBatch(); 
 });
-
 
 // ===============================
 // Training Js (Updated)
