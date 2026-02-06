@@ -107,67 +107,89 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ===============================
-// Courses Page JS (Updated)
-// ===============================
+// ============================
+// COURSE SECTION - USER PANEL
+// ============================
+
 function toggleFAQ(element) {
   element.parentElement.classList.toggle("active");
 }
+
 function toggleTopics(element) {
   element.parentElement.classList.toggle("active");
 }
+
 function expandFirstBox() {
   const firstBox = document.getElementById("linux-box");
   if (firstBox && !firstBox.classList.contains("active")) {
     firstBox.classList.add("active");
   }
 }
+
 const COURSE_API = `${BASE_URL}/api/courses`;
+
 /**
  * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
  */
 function formatDisplayDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr; // जर तारीख नसेल तर आहे तसा मजकूर दाखवा
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
 }
+
 /**
- * डेटाबेस मधून फक्त Duration आणि Start Date अपडेट करणे
+ * डेटाबेस मधून Duration आणि Start Date अपडेट करणे
  */
 async function updateUpcomingBatch() {
   try {
     const res = await fetch(COURSE_API);
     const courses = await res.json();
     
-    // जर डेटा नसेल तर प्रोसेस थांबवा
-    if (!courses || courses.length === 0 || courses.error) {
+    // डेटा तपासणी
+    if (!courses || !Array.isArray(courses) || courses.length === 0) {
         console.warn("No course data available.");
         return;
     }
-    // शेवटचा (Latest) ॲड केलेला कोर्स मिळवणे
+
+    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
     const latest = courses[courses.length - 1];
+    
+    // HTML मधले Elements शोधणे
     const courseInfo = document.querySelector("#courses .course-info");
     
-    if (courseInfo) {
+    if (courseInfo && latest) {
       const spans = courseInfo.querySelectorAll("span");
+      
       if (spans.length >= 2) {
-        // फक्त मजकूर अपडेट करा, लेआउट तोच राहील
-        spans[0].innerHTML = `📅 <strong>New Batch Starting On :</strong> ${formatDisplayDate(latest.start_date)}`;
-        spans[1].innerHTML = `⏱ <strong>Duration:</strong> ${latest.duration}`;
+        // 1. Start Date अपडेट करा
+        const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
+        spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
+        
+        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
+        const durationText = latest.duration ? latest.duration : "6 Months";
+        spans[1].innerHTML = `⏱ Duration: ${durationText}`;
+        
+        console.log("Batch Data Updated:", latest);
       }
     }
   } catch (err) {
     console.error("Failed to load upcoming batch info:", err);
   }
 }
+
 // पेज लोड झाल्यावर रन करा
 document.addEventListener("DOMContentLoaded", () => {
-    expandFirstBox(); // तुमचे जुने फंक्शन
-    updateUpcomingBatch(); // नवीन डेटा फेचिंग लॉजिक
+    // 1. Linux बॉक्स ऑटो-ओपन करा
+    expandFirstBox(); 
+    
+    // 2. डेटाबेस मधून नवीन तारीख आणि ड्युरेशन आणा
+    updateUpcomingBatch(); 
 });
+
 
 // ===============================
 // Training Js (Updated)
