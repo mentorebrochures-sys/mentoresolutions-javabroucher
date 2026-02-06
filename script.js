@@ -110,24 +110,19 @@ document.addEventListener("DOMContentLoaded", () => {
 // ===============================
 // Courses Page JS (Updated)
 // ===============================
-
 function toggleFAQ(element) {
   element.parentElement.classList.toggle("active");
 }
-
 function toggleTopics(element) {
   element.parentElement.classList.toggle("active");
 }
-
 function expandFirstBox() {
   const firstBox = document.getElementById("linux-box");
   if (firstBox && !firstBox.classList.contains("active")) {
     firstBox.classList.add("active");
   }
 }
-
 const COURSE_API = `${BASE_URL}/api/courses`;
-
 /**
  * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
  */
@@ -139,7 +134,6 @@ function formatDisplayDate(dateStr) {
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
 }
-
 /**
  * डेटाबेस मधून फक्त Duration आणि Start Date अपडेट करणे
  */
@@ -153,7 +147,6 @@ async function updateUpcomingBatch() {
         console.warn("No course data available.");
         return;
     }
-
     // शेवटचा (Latest) ॲड केलेला कोर्स मिळवणे
     const latest = courses[courses.length - 1];
     const courseInfo = document.querySelector("#courses .course-info");
@@ -161,16 +154,15 @@ async function updateUpcomingBatch() {
     if (courseInfo) {
       const spans = courseInfo.querySelectorAll("span");
       if (spans.length >= 2) {
-        // Navin fields: start_date1 ani duration1 vaparlyat
-        spans[0].innerHTML = `📅 <strong>New Batch Starting On :</strong> ${formatDisplayDate(latest.start_date1)}`;
-        spans[1].innerHTML = `⏱ <strong>Duration:</strong> ${latest.duration1}`;
+        // फक्त मजकूर अपडेट करा, लेआउट तोच राहील
+        spans[0].innerHTML = `📅 <strong>New Batch Starting On :</strong> ${formatDisplayDate(latest.start_date)}`;
+        spans[1].innerHTML = `⏱ <strong>Duration:</strong> ${latest.duration}`;
       }
     }
   } catch (err) {
     console.error("Failed to load upcoming batch info:", err);
   }
 }
-
 // पेज लोड झाल्यावर रन करा
 document.addEventListener("DOMContentLoaded", () => {
     expandFirstBox(); // तुमचे जुने फंक्शन
