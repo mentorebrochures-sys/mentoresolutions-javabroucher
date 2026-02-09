@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ============================
-// COURSE SECTION - USER PANEL
+// JAVA COURSE SECTION - USER PANEL
 // ============================
 
 function toggleFAQ(element) {
@@ -126,7 +126,8 @@ function expandFirstBox() {
   }
 }
 
-const COURSE_API = `${BASE_URL}/api/courses`;
+// 1. API Endpoint badalla
+const COURSE_API = `${BASE_URL}/api/java-courses`;
 
 /**
  * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
@@ -134,7 +135,7 @@ const COURSE_API = `${BASE_URL}/api/courses`;
 function formatDisplayDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; // जर तारीख नसेल तर आहे तसा मजकूर दाखवा
+    if (isNaN(date.getTime())) return dateStr; 
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -142,38 +143,36 @@ function formatDisplayDate(dateStr) {
 }
 
 /**
- * डेटाबेस मधून Duration आणि Start Date अपडेट करणे
+ * डेटाबेस मधून Duration आणि Start Date अपडेट करणे (Updated for courses1)
  */
 async function updateUpcomingBatch() {
   try {
     const res = await fetch(COURSE_API);
     const courses = await res.json();
     
-    // डेटा तपासणी
     if (!courses || !Array.isArray(courses) || courses.length === 0) {
         console.warn("No course data available.");
         return;
     }
 
-    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
+    // Latest कोर्स मिळवणे
     const latest = courses[courses.length - 1];
     
-    // HTML मधले Elements शोधणे
     const courseInfo = document.querySelector("#courses .course-info");
     
     if (courseInfo && latest) {
       const spans = courseInfo.querySelectorAll("span");
       
       if (spans.length >= 2) {
-        // 1. Start Date अपडेट करा
-        const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
+        // 1. Start Date अपडेट करा (start_date1 वापरले आहे)
+        const startDate = latest.start_date1 ? formatDisplayDate(latest.start_date1) : "TBA";
         spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
-        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
-        const durationText = latest.duration ? latest.duration : "6 Months";
+        // 2. Duration अपडेट करा (duration1 वापरले आहे)
+        const durationText = latest.duration1 ? latest.duration1 : "6 Months";
         spans[1].innerHTML = `⏱ Duration: ${durationText}`;
         
-        console.log("Batch Data Updated:", latest);
+        console.log("Java Batch Data Updated:", latest);
       }
     }
   } catch (err) {
@@ -183,13 +182,9 @@ async function updateUpcomingBatch() {
 
 // पेज लोड झाल्यावर रन करा
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Linux बॉक्स ऑटो-ओपन करा
     expandFirstBox(); 
-    
-    // 2. डेटाबेस मधून नवीन तारीख आणि ड्युरेशन आणा
     updateUpcomingBatch(); 
 });
-
 
 // ===============================
 // Training Js (Updated)
