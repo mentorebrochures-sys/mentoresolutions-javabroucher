@@ -146,38 +146,25 @@ function formatDisplayDate(dateStr) {
  */
 async function updateUpcomingBatch() {
   try {
-    const res = await fetch(COURSE_API);
-    const courses = await res.json();
+    // Direct 'java' cha data magva
+    const res = await fetch(`${COURSE_API}/java`); 
+    const course = await res.json();
     
-    // डेटा तपासणी
-    if (!courses || !Array.isArray(courses) || courses.length === 0) {
-        console.warn("No course data available.");
+    if (!course || course.error) {
+        console.warn("Java course data not found.");
         return;
     }
 
-    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
-    const latest = courses[courses.length - 1];
-    
-    // HTML मधले Elements शोधणे
     const courseInfo = document.querySelector("#courses .course-info");
-    
-    if (courseInfo && latest) {
+    if (courseInfo) {
       const spans = courseInfo.querySelectorAll("span");
-      
       if (spans.length >= 2) {
-        // 1. Start Date अपडेट करा
-        const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
-        spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
-        
-        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
-        const durationText = latest.duration ? latest.duration : "6 Months";
-        spans[1].innerHTML = `⏱ Duration: ${durationText}`;
-        
-        console.log("Batch Data Updated:", latest);
+        spans[0].innerHTML = `📅 New Batch Starting On : ${formatDisplayDate(course.start_date)}`;
+        spans[1].innerHTML = `⏱ Duration: ${course.duration}`;
       }
     }
   } catch (err) {
-    console.error("Failed to load upcoming batch info:", err);
+    console.error("Java update error:", err);
   }
 }
 
