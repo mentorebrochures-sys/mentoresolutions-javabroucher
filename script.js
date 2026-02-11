@@ -126,7 +126,7 @@ function expandFirstBox() {
   }
 }
 
-const COURSE_API = `${BASE_URL}/api/courses`;
+const JAVA_COURSE_API = `${BASE_URL}/api/java-courses`;
 
 /**
  * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
@@ -146,7 +146,7 @@ function formatDisplayDate(dateStr) {
  */
 async function updateUpcomingBatch() {
   try {
-    const res = await fetch(COURSE_API);
+    const res = await fetch(JAVA_COURSE_API);
     const courses = await res.json();
     
     // डेटा तपासणी
@@ -166,11 +166,11 @@ async function updateUpcomingBatch() {
       
       if (spans.length >= 2) {
         // 1. Start Date अपडेट करा
-        const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
+        const startDate = latest.start_date2 ? formatDisplayDate(latest.start_date2) : "TBA";
         spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
         // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
-        const durationText = latest.duration ? latest.duration : "6 Months";
+        const durationText = latest.duration2 ? latest.duration2 : "6 Months";
         spans[1].innerHTML = `⏱ Duration: ${durationText}`;
         
         console.log("Batch Data Updated:", latest);
