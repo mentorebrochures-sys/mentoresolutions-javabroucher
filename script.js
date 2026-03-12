@@ -146,39 +146,51 @@ function formatJavaDate(dateStr) {
 /**
  * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणणे
  */
-async function updateJavaUpcomingBatch() { // नाव नीट तपासा
+/**
+ * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणणे आणि HTML अपडेट करणे
+ */
+async function updateJavaUpcomingBatch() {
   try {
-    const res = await fetch(JAVA_API_URL); // थेट व्हेरिएबल वापरा
+    console.log("Fetching Java batch details...");
+    
+    // १. बॅकएंड कडून डेटा मिळवणे
+    const res = await fetch(`${BASE_URL}/api/java-courses`);
+    if (!res.ok) throw new Error("Network response was not ok");
+    
     const courses = await res.json();
     
     if (!courses || courses.length === 0) {
-        console.warn("डेटाबेसमध्ये कोणताही डेटा नाही.");
+        console.warn("डेटाबेसमध्ये डेटा सापडला नाही.");
         return;
     }
 
-    // शेवटचा (Latest) डेटा मिळवणे
+    // २. लेटेस्ट बॅच निवडणे (Array मधील शेवटचा आयटम)
     const latest = courses[courses.length - 1];
-    console.log("Latest Java Data:", latest); // चेक करण्यासाठी
+    console.log("Latest Data Received:", latest);
 
-    // HTML मधील स्पॅन्स निवडणे
+    // ३. तुमच्या HTML मधील स्पॅन्स निवडणे (id="courses" च्या आतील .course-info)
     const spans = document.querySelectorAll("#courses .course-info span");
     
     if (spans.length >= 3 && latest) {
-        // १. इथे formatJavaDate वापरले आहे (आधी formatDisplayDate होते जे चुकीचे होते)
-        spans[0].innerHTML = `📅 New Batch Starting On: ${latest.start_date ? formatJavaDate(latest.start_date) : "TBA"}`;
-        
-        // २. इथे तुमच्या बॅकएंडच्या स्पेलिंगनुसार 'hours' आणि 'batch_time' चेक करा
+        // तारीख फॉरमॅट करणे (formatJavaDate वर डिफाइन केले असावे)
+        const formattedDate = latest.start_date ? formatJavaDate(latest.start_date) : "TBA";
+
+        // ४. डेटा सेट करणे (innerHTML मुळे जुना डेटा ओव्हरराईट होईल)
+        spans[0].innerHTML = `📅 New Batch Starting On: ${formattedDate}`;
         spans[1].innerHTML = `⏰ Total Hours: ${latest.hours || "120 Hours"}`;
         spans[2].innerHTML = `🕒 Batch Time: ${latest.batch_time || "TBA"}`;
         
-        console.log("Java Batch यशस्वीरित्या फेच झाले!");
-    } else {
-        console.error("HTML मध्ये स्पॅन्स सापडले नाहीत किंवा डेटा अपूर्ण आहे.");
+        console.log("UI Successfully Updated!");
     }
   } catch (err) {
-    console.error("फेचिंग एरर (Java):", err);
+    console.error("Fetch Error (Java Course):", err);
   }
 }
+
+// ५. पेज लोड झाल्यावर फंक्शन कॉल करणे
+document.addEventListener("DOMContentLoaded", () => {
+    updateJavaUpcomingBatch(); 
+});
 
 // --- INITIALIZE ---
 document.addEventListener("DOMContentLoaded", () => {
