@@ -131,58 +131,36 @@ function formatJavaDate(dateStr) {
 /**
  * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणणे
  */
-async function updateJavaUpcomingBatch() {
-    try {
-        console.log("Java Data Fetching Started...");
-
-        // Anti-Cache: दरवेळी फ्रेश डेटा मिळवण्यासाठी टाइमस्टॅम्प जोडला आहे
-        const response = await fetch(`${JAVA_API_URL}?t=${new Date().getTime()}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const courses = await response.json();
-
-        // १. डेटा व्हॅलिडेशन
-        if (!courses || !Array.isArray(courses) || courses.length === 0) {
-            console.warn("बॅकएंडमध्ये कोणताही डेटा सापडला नाही.");
-            return;
-        }
-
-        // २. सर्वात लेटेस्ट (शेवटची) बॅच मिळवणे
-        const latest = courses[courses.length - 1];
-        console.log("Latest Batch Data:", latest);
-
-        // ३. HTML मधील '.course-info' कंटेनर शोधणे
-        const courseInfo = document.querySelector("#courses .course-info");
-
-        if (courseInfo && latest) {
-            const spans = courseInfo.querySelectorAll("span");
-
-            // तुमच्या HTML मध्ये ३ स्पेन्स (span) असणे आवश्यक आहे
-            if (spans.length >= 3) {
-                
-                // १. Start Date अपडेट (Field: start_date)
-                const startDate = latest.start_date ? formatJavaDate(latest.start_date) : "TBA";
-                spans[0].innerHTML = `📅 New Batch Starting On: ${startDate}`;
-                
-                // २. Total Hours अपडेट (Field: hours)
-                const hoursText = latest.hours ? latest.hours : "120 Hours";
-                spans[1].innerHTML = `⏰ Total Hours: ${hoursText}`;
-
-                // ३. Batch Time अपडेट (Field: batch_time)
-                const batchTime = latest.batch_time ? latest.batch_time : "TBA";
-                spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
-                
-                console.log("Java User Panel Updated Successfully!");
-            } else {
-                console.error("HTML Error: '.course-info' मध्ये ३ स्पॅन्स सापडले नाहीत.");
-            }
-        }
-    } catch (err) {
-        console.error("Fetch Error:", err);
+async function updateUpcomingBatch() {
+  try {
+    // १. URL पूर्ण आहे का खात्री करा (उदा. "http://localhost:5000/api/java-courses")
+    const res = await fetch(`${BASE_URL}/api/java-courses`);
+    const courses = await res.json();
+    
+    if (!courses || courses.length === 0) {
+        console.warn("डेटाबेसमध्ये कोणताही डेटा नाही.");
+        return;
     }
+
+    // २. शेवटचा (Latest) डेटा मिळवणे
+    const latest = courses[courses.length - 1];
+    
+    // ३. HTML मधील स्पॅन्स निवडणे
+    const spans = document.querySelectorAll("#courses .course-info span");
+    
+    if (spans.length >= 3 && latest) {
+        // बॅकएंडमधील कॉलमच्या नावाप्रमाणे इथे बदला (Case Sensitive)
+        spans[0].innerHTML = `📅 New Batch Starting On: ${latest.start_date ? formatDisplayDate(latest.start_date) : "TBA"}`;
+        spans[1].innerHTML = `⏰ Total Hours: ${latest.hours || "120 Hours"}`;
+        spans[2].innerHTML = `🕒 Batch Time: ${latest.batch_time || "TBA"}`;
+        
+        console.log("यशस्वीरित्या फेच झाले!");
+    } else {
+        console.error("HTML मध्ये स्पॅन्स सापडले नाहीत किंवा डेटा अपूर्ण आहे.");
+    }
+  } catch (err) {
+    console.error("फेचिंग एरर:", err);
+  }
 }
 
 // --- UI Functions (Syllabus Toggle) ---
