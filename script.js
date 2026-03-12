@@ -126,70 +126,54 @@ function expandFirstBox() {
   }
 }
 
-const   COURSE_API=`${BASE_URL}/api/java-courses`
+const JAVA_COURSE_API=`${BASE_URL}/api/java-courses`
 /**
  * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
  */
-function formatDisplayDate(dateStr) {
-    if (!dateStr) return "TBA";
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; 
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-}
-
 async function updateUpcomingBatch() {
   try {
-    const res = await fetch(COURSE_API);
+    // API URL बरोबर आहे का तपासा
+    console.log("Fetching from:", JAVA_COURSE_API);
+    
+    const res = await fetch(JAVA_COURSE_API);
     const courses = await res.json();
     
     if (!courses || !Array.isArray(courses) || courses.length === 0) {
-        console.warn("No course data available at:", COURSE_API);
+        console.warn("No course data available.");
         return;
     }
 
     // शेवटचा (Latest) कोर्स मिळवणे
     const latest = courses[courses.length - 1];
-    
-    // HTML Elements शोधणे (Make sure your section has id="courses")
+    console.log("Latest Batch found:", latest);
+
     const courseInfo = document.querySelector("#courses .course-info");
     
     if (courseInfo && latest) {
       const spans = courseInfo.querySelectorAll("span");
       
-      // We need exactly 3 spans for Date, Hours, and Time
       if (spans.length >= 3) {
-        // 1. Start Date (Database field: start_date)
+        // १. Start Date (तुमच्या DB मध्ये start_date आहे)
         const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
         spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
-        // 2. Total Hours (Database field: hours)
+        // २. Total Hours (तुम्ही Admin मध्ये 'hours' वापरले आहे, म्हणून इथे 'hours' च वापरा)
+        // तुमच्या जुन्या कोडमध्ये latest.hours ऐवजी चूक असू शकते
         const hoursText = latest.hours ? latest.hours : "120 Hours";
         spans[1].innerHTML = `⏰ Total Hours: ${hoursText}`;
 
-        // 3. Batch Time (Database field: batch_time)
+        // ३. Batch Time (तुमच्या DB मध्ये batch_time आहे)
         const batchTime = latest.batch_time ? latest.batch_time : "TBA";
         spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
         
-        console.log("User Panel updated with:", latest);
       } else {
-        console.error("Found only " + spans.length + " spans. Need at least 3 inside .course-info");
+        console.error("HTML मध्ये ३ स्पॅन्स (span) सापडले नाहीत.");
       }
-    } else {
-        console.error("Could not find '#courses .course-info' in your HTML.");
     }
   } catch (err) {
-    console.error("Fetch error on User Panel:", err);
+    console.error("Java Course fetch error:", err);
   }
 }
-
-// पेज लोड झाल्यावर रन करा
-document.addEventListener("DOMContentLoaded", () => {
-    if (typeof expandFirstBox === "function") expandFirstBox(); 
-    updateUpcomingBatch(); 
-});
 
 // ===============================
 // Training Js (Updated)
