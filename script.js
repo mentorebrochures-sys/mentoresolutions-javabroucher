@@ -142,7 +142,7 @@ function formatDisplayDate(dateStr) {
 }
 
 /**
- * डेटाबेस मधून Duration, Start Date आणि Batch Time अपडेट करणे
+ * डेटाबेस मधून Duration आणि Start Date अपडेट करणे
  */
 async function updateUpcomingBatch() {
   try {
@@ -155,7 +155,7 @@ async function updateUpcomingBatch() {
         return;
     }
 
-    // शेवटचा (Latest) कोर्स मिळवणे
+    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
     const latest = courses[courses.length - 1];
     
     // HTML मधले Elements शोधणे
@@ -164,23 +164,16 @@ async function updateUpcomingBatch() {
     if (courseInfo && latest) {
       const spans = courseInfo.querySelectorAll("span");
       
-      // आपण ३ fields (Start Date, Duration, Batch Time) दाखवणार आहोत
-      if (spans.length >= 3) {
+      if (spans.length >= 2) {
         // 1. Start Date अपडेट करा
         const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
         spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
-        // 2. Duration अपडेट करा
+        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
         const durationText = latest.duration ? latest.duration : "6 Months";
         spans[1].innerHTML = `⏱ Duration: ${durationText}`;
-
-        // 3. Batch Time अपडेट करा (नवीन फील्ड)
-        const batchTime = latest.batch_time ? latest.batch_time : "TBA";
-        spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
         
         console.log("Batch Data Updated:", latest);
-      } else {
-        console.warn("Expected 3 spans in .course-info but found " + spans.length);
       }
     }
   } catch (err) {
