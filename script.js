@@ -126,74 +126,50 @@ function expandFirstBox() {
   }
 }
 
-const COURSE_API = `${BASE_URL}/api/courses`;
+// 1. Ensure the URL matches the Admin Panel's API URL
+const COURSE_API = `${BASE_URL}/api/java-courses`; 
 
-/**
- * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
- */
-function formatDisplayDate(dateStr) {
-    if (!dateStr) return "TBA";
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; 
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-}
-
-/**
- * डेटाबेस मधून Start Date, Hours आणि Batch Time अपडेट करणे
- */
 async function updateUpcomingBatch() {
   try {
     const res = await fetch(COURSE_API);
     const courses = await res.json();
     
-    // डेटा तपासणी
     if (!courses || !Array.isArray(courses) || courses.length === 0) {
         console.warn("No course data available.");
         return;
     }
 
-    // शेवटचा (Latest) कोर्स मिळवणे
+    // Get the latest course entry
     const latest = courses[courses.length - 1];
     
-    // HTML मधले Elements शोधणे
     const courseInfo = document.querySelector("#courses .course-info");
     
     if (courseInfo && latest) {
       const spans = courseInfo.querySelectorAll("span");
       
-      // आता आपल्याकडे ३ spans आहेत (Date, Hours, Batch Time)
+      // Safety check: ensure the HTML has 3 spans
       if (spans.length >= 3) {
-        // 1. Start Date अपडेट करा
+        // 1. Map 'start_date'
         const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
         spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
-        // 2. Hours अपडेट करा (Property: hours)
+        // 2. Map 'hours' (Changed from duration)
         const hoursText = latest.hours ? latest.hours : "120 Hours";
         spans[1].innerHTML = `⏰ Total Hours: ${hoursText}`;
 
-        // 3. Batch Time अपडेट करा (Property: batch_time)
+        // 3. Map 'batch_time' (The new field)
         const batchTime = latest.batch_time ? latest.batch_time : "TBA";
         spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
         
-        console.log("Batch Data Updated successfully:", latest);
+        console.log("User Panel successfully synced with Java Database:", latest);
+      } else {
+        console.warn("User Panel HTML is missing the 3rd span for Batch Time.");
       }
     }
   } catch (err) {
-    console.error("Failed to load upcoming batch info:", err);
+    console.error("User Panel fetch error:", err);
   }
 }
-
-// पेज लोड झाल्यावर रन करा
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Linux बॉक्स ऑटो-ओपन करा
-    expandFirstBox(); 
-    
-    // 2. डेटाबेस मधून नवीन माहिती आणा
-    updateUpcomingBatch(); 
-});
 
 
 // ===============================
