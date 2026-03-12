@@ -107,20 +107,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ============================
-// COURSE SECTION - USER PANEL
-// ============================
+// ==========================================
+// JAVA COURSE SECTION - USER PANEL FETCHING
+// ==========================================
 
-// १. API Endpoint (बॅकएंड URL बरोबर असल्याची खात्री करा)
+// १. API URL (तुमच्या server.js मधील रूटनुसार)
 const JAVA_API_URL = `${BASE_URL}/api/java-courses`;
 
 /**
- * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
+ * तारीख DD-MM-YYYY फॉरमॅटमध्ये रूपांतरित करण्यासाठी
  */
 function formatJavaDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr; 
+    
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -128,55 +129,63 @@ function formatJavaDate(dateStr) {
 }
 
 /**
- * Java Database मधून माहिती आणून Upcoming Batch अपडेट करणे
+ * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणणे
  */
 async function updateJavaUpcomingBatch() {
     try {
-        console.log("Java डेटा फेच होत आहे...");
-        
-        // Anti-Cache: टाइमस्टॅम्पमुळे दरवेळी नवीन डेटा मिळेल
-        const res = await fetch(`${JAVA_API_URL}?t=${new Date().getTime()}`);
-        const courses = await res.json();
+        console.log("Java Data Fetching Started...");
 
+        // Anti-Cache: दरवेळी फ्रेश डेटा मिळवण्यासाठी टाइमस्टॅम्प जोडला आहे
+        const response = await fetch(`${JAVA_API_URL}?t=${new Date().getTime()}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const courses = await response.json();
+
+        // १. डेटा व्हॅलिडेशन
         if (!courses || !Array.isArray(courses) || courses.length === 0) {
-            console.warn("Java कोर्सचा डेटा सापडला नाही.");
+            console.warn("बॅकएंडमध्ये कोणताही डेटा सापडला नाही.");
             return;
         }
 
-        // लेटेस्ट कोर्स मिळवणे
+        // २. सर्वात लेटेस्ट (शेवटची) बॅच मिळवणे
         const latest = courses[courses.length - 1];
-        console.log("मिळालेला डेटा:", latest);
+        console.log("Latest Batch Data:", latest);
 
-        // HTML मधील '.course-info' शोधणे
+        // ३. HTML मधील '.course-info' कंटेनर शोधणे
         const courseInfo = document.querySelector("#courses .course-info");
 
         if (courseInfo && latest) {
             const spans = courseInfo.querySelectorAll("span");
 
-            // तुमच्या HTML मध्ये ३ स्पेन्स आहेत, म्हणून spans.length >= 3 तपासले आहे
+            // तुमच्या HTML मध्ये ३ स्पेन्स (span) असणे आवश्यक आहे
             if (spans.length >= 3) {
                 
-                // १. Start Date अपडेट
+                // १. Start Date अपडेट (Field: start_date)
                 const startDate = latest.start_date ? formatJavaDate(latest.start_date) : "TBA";
                 spans[0].innerHTML = `📅 New Batch Starting On: ${startDate}`;
                 
-                // २. Total Hours अपडेट
+                // २. Total Hours अपडेट (Field: hours)
                 const hoursText = latest.hours ? latest.hours : "120 Hours";
                 spans[1].innerHTML = `⏰ Total Hours: ${hoursText}`;
 
-                // ३. Batch Time अपडेट
+                // ३. Batch Time अपडेट (Field: batch_time)
                 const batchTime = latest.batch_time ? latest.batch_time : "TBA";
                 spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
                 
-                console.log("Java User Panel यशस्वीरित्या अपडेट झाले!");
+                console.log("Java User Panel Updated Successfully!");
+            } else {
+                console.error("HTML Error: '.course-info' मध्ये ३ स्पॅन्स सापडले नाहीत.");
             }
         }
     } catch (err) {
-        console.error("Java Fetch Error:", err);
+        console.error("Fetch Error:", err);
     }
 }
 
-// --- UI Functions ---
+// --- UI Functions (Syllabus Toggle) ---
 
 function toggleFAQ(element) {
     element.parentElement.classList.toggle("active");
@@ -187,7 +196,6 @@ function toggleTopics(element) {
 }
 
 function expandFirstBox() {
-    // तुमच्या HTML मध्ये आयडी 'linux-box' आहे, तो बरोबर आहे.
     const firstBox = document.getElementById("linux-box");
     if (firstBox && !firstBox.classList.contains("active")) {
         firstBox.classList.add("active");
@@ -196,10 +204,10 @@ function expandFirstBox() {
 
 // --- INITIALIZE ---
 document.addEventListener("DOMContentLoaded", () => {
-    // १. पहिला बॉक्स (Stage One) ऑटोमॅटिक उघडा
+    // १. सिलॅबसचा पहिला विभाग उघडा
     expandFirstBox(); 
     
-    // २. डेटाबेस मधून लेटेस्ट बॅचची माहिती आणा
+    // २. बॅकएंड मधून डेटा आणा
     updateJavaUpcomingBatch(); 
 });
 
