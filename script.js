@@ -127,15 +127,15 @@ function expandFirstBox() {
 }
 
 // १. API Endpoints आणि Helper Functions (टॉपला ठेवा)
-const JAVA_COURSE_API = `${BASE_URL}/api/java-courses`;
+const JAVA_API_URL = `${BASE_URL}/api/java-courses`;
 
 /**
- * तारीख DD-MM-YYYY फॉरमॅटमध्ये रूपांतरित करण्यासाठी
+ * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
  */
-function formatDisplayDate(dateStr) {
+function formatJavaDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; // जर तारीख इनवॅलिड असेल तर मूळ स्ट्रिंग दाखवा
+    if (isNaN(date.getTime())) return dateStr; 
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -143,66 +143,67 @@ function formatDisplayDate(dateStr) {
 }
 
 /**
- * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणून युझर पॅनेल अपडेट करणे
+ * Java Database मधून माहिती आणून User Panel अपडेट करणे
  */
-async function updateUpcomingBatch() {
+async function updateJavaUpcomingBatch() {
     try {
-        console.log("Fetching Java Course Data from:", JAVA_COURSE_API);
+        console.log("Java डेटा फेच होत आहे...");
         
-        // Cache टाळण्यासाठी टाइमस्टॅम्प जोडला आहे
-        const res = await fetch(`${JAVA_COURSE_API}?t=${new Date().getTime()}`);
+        // Cache टाळण्यासाठी टाइमस्टॅम्प वापरला आहे
+        const res = await fetch(`${JAVA_API_URL}?t=${new Date().getTime()}`);
         const courses = await res.json();
 
-        // १. डेटाची पडताळणी (Validation)
+        // १. डेटा तपासणी
         if (!courses || !Array.isArray(courses) || courses.length === 0) {
-            console.warn("API कडून कोणताही डेटा आला नाही.");
+            console.warn("Java कोर्सचा डेटा सापडला नाही.");
             return;
         }
 
-        // २. सर्वात अलीकडची (Latest) बॅच मिळवणे
-        // टीप: जर तुमच्या API मध्ये ID नुसार सॉर्टिंग नसेल, तर हे खात्री करते की सर्वात मोठी ID असलेली बॅच मिळेल.
-        const latest = courses.sort((a, b) => a.id - b.id)[courses.length - 1];
-        console.log("Latest Batch Object:", latest);
+        // २. लेटेस्ट कोर्स मिळवणे (शेवटचा इंडेक्स)
+        const latest = courses[courses.length - 1];
+        console.log("मिळालेला डेटा:", latest);
 
-        // ३. HTML Elements शोधणे
+        // ३. HTML मधील .course-info शोधणे
         const courseInfo = document.querySelector("#courses .course-info");
-        
-        if (!courseInfo) {
-            console.error("Error: HTML मध्ये '#courses .course-info' सापडले नाही.");
-            return;
+
+        if (courseInfo && latest) {
+            const spans = courseInfo.querySelectorAll("span");
+
+            // खात्री करा की HTML मध्ये ३ स्पेन्स आहेत (Date, Hours, Batch Time)
+            if (spans.length >= 3) {
+                
+                // १. Start Date (Field: start_date)
+                const startDate = latest.start_date ? formatJavaDate(latest.start_date) : "TBA";
+                spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
+                
+                // २. Total Hours (Field: hours) - आधी इथे duration होते, आता hours आहे.
+                const hoursText = latest.hours ? latest.hours : "120 Hours";
+                spans[1].innerHTML = `⏰ Total Hours: ${hoursText}`;
+
+                // ३. Batch Time (Field: batch_time) - हा नवीन कॉलम आहे.
+                const batchTime = latest.batch_time ? latest.batch_time : "TBA";
+                spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
+                
+                console.log("Java User Panel यशस्वीरित्या अपडेट झाले!");
+            } else {
+                console.error("HTML मध्ये ३ स्पेन्स सापडले नाहीत. कृपया HTML तपासा.");
+            }
         }
-
-        const spans = courseInfo.querySelectorAll("span");
-
-        // ४. डेटा रेंडर करणे (३ स्पेन्स असणे आवश्यक आहे)
-        if (spans.length >= 3) {
-            
-            // तारीख अपडेट (Field: start_date)
-            const displayDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
-            spans[0].innerHTML = `📅 New Batch Starting On : ${displayDate}`;
-            
-            // तास अपडेट (Field: hours)
-            const hoursVal = latest.hours ? latest.hours : "120 Hours";
-            spans[1].innerHTML = `⏰ Total Hours: ${hoursVal}`;
-
-            // वेळ अपडेट (Field: batch_time)
-            const timeVal = latest.batch_time ? latest.batch_time : "TBA";
-            spans[2].innerHTML = `🕒 Batch Time: ${timeVal}`;
-
-            console.log("User Panel successfully updated with latest database values.");
-        } else {
-            console.error(`HTML मध्ये फक्त ${spans.length} स्पेन्स सापडले. कमीत कमी ३ आवश्यक आहेत.`);
-        }
-
     } catch (err) {
-        console.error("Java Course Fetching Error:", err);
+        console.error("Java Fetch Error:", err);
     }
 }
 
-// ५. पेज लोड झाल्यावर फंक्शन कॉल करा
+// पेज लोड झाल्यावर रन करा
 document.addEventListener("DOMContentLoaded", () => {
-    updateUpcomingBatch();
+    // १. सुरुवातीचा बॉक्स उघडा (उदा. Linux किंवा Java)
+    if (typeof expandFirstBox === "function") expandFirstBox(); 
+    
+    // २. Java बॅचची माहिती अपडेट करा
+    updateJavaUpcomingBatch(); 
 });
+
+
 // ===============================
 // Training Js (Updated)
 // ===============================
