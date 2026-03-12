@@ -107,15 +107,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ==========================================
-// JAVA COURSE SECTION - USER PANEL FETCHING
-// ==========================================
+// ============================
+// COURSE SECTION - USER PANEL
+// ============================
 
-// १. API URL (तुमच्या server.js मधील रूटनुसार)
+function toggleFAQ(element) {
+  element.parentElement.classList.toggle("active");
+}
+
+function toggleTopics(element) {
+  element.parentElement.classList.toggle("active");
+}
+
+function expandFirstBox() {
+  const firstBox = document.getElementById("linux-box");
+  if (firstBox && !firstBox.classList.contains("active")) {
+    firstBox.classList.add("active");
+  }
+}
+
+// १. API URL
 const JAVA_API_URL = `${BASE_URL}/api/java-courses`;
 
 /**
- * तारीख DD-MM-YYYY फॉरमॅटमध्ये रूपांतरित करण्यासाठी
+ * तारीख DD-MM-YYYY फॉरमॅटमध्ये करण्यासाठी
  */
 function formatJavaDate(dateStr) {
     if (!dateStr) return "TBA";
@@ -131,10 +146,9 @@ function formatJavaDate(dateStr) {
 /**
  * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणणे
  */
-async function updateUpcomingBatch() {
+async function updateJavaUpcomingBatch() { // नाव नीट तपासा
   try {
-    // १. URL पूर्ण आहे का खात्री करा (उदा. "http://localhost:5000/api/java-courses")
-    const res = await fetch(`${BASE_URL}/api/java-courses`);
+    const res = await fetch(JAVA_API_URL); // थेट व्हेरिएबल वापरा
     const courses = await res.json();
     
     if (!courses || courses.length === 0) {
@@ -142,51 +156,34 @@ async function updateUpcomingBatch() {
         return;
     }
 
-    // २. शेवटचा (Latest) डेटा मिळवणे
+    // शेवटचा (Latest) डेटा मिळवणे
     const latest = courses[courses.length - 1];
-    
-    // ३. HTML मधील स्पॅन्स निवडणे
+    console.log("Latest Java Data:", latest); // चेक करण्यासाठी
+
+    // HTML मधील स्पॅन्स निवडणे
     const spans = document.querySelectorAll("#courses .course-info span");
     
     if (spans.length >= 3 && latest) {
-        // बॅकएंडमधील कॉलमच्या नावाप्रमाणे इथे बदला (Case Sensitive)
-        spans[0].innerHTML = `📅 New Batch Starting On: ${latest.start_date ? formatDisplayDate(latest.start_date) : "TBA"}`;
+        // १. इथे formatJavaDate वापरले आहे (आधी formatDisplayDate होते जे चुकीचे होते)
+        spans[0].innerHTML = `📅 New Batch Starting On: ${latest.start_date ? formatJavaDate(latest.start_date) : "TBA"}`;
+        
+        // २. इथे तुमच्या बॅकएंडच्या स्पेलिंगनुसार 'hours' आणि 'batch_time' चेक करा
         spans[1].innerHTML = `⏰ Total Hours: ${latest.hours || "120 Hours"}`;
         spans[2].innerHTML = `🕒 Batch Time: ${latest.batch_time || "TBA"}`;
         
-        console.log("यशस्वीरित्या फेच झाले!");
+        console.log("Java Batch यशस्वीरित्या फेच झाले!");
     } else {
         console.error("HTML मध्ये स्पॅन्स सापडले नाहीत किंवा डेटा अपूर्ण आहे.");
     }
   } catch (err) {
-    console.error("फेचिंग एरर:", err);
+    console.error("फेचिंग एरर (Java):", err);
   }
-}
-
-// --- UI Functions (Syllabus Toggle) ---
-
-function toggleFAQ(element) {
-    element.parentElement.classList.toggle("active");
-}
-
-function toggleTopics(element) {
-    element.parentElement.classList.toggle("active");
-}
-
-function expandFirstBox() {
-    const firstBox = document.getElementById("linux-box");
-    if (firstBox && !firstBox.classList.contains("active")) {
-        firstBox.classList.add("active");
-    }
 }
 
 // --- INITIALIZE ---
 document.addEventListener("DOMContentLoaded", () => {
-    // १. सिलॅबसचा पहिला विभाग उघडा
     expandFirstBox(); 
-    
-    // २. बॅकएंड मधून डेटा आणा
-    updateJavaUpcomingBatch(); 
+    updateJavaUpcomingBatch(); // आता हे फंक्शन बरोबर कॉल होईल
 });
 
 
