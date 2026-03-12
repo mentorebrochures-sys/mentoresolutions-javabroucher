@@ -126,17 +126,15 @@ function expandFirstBox() {
   }
 }
 
-// १. API URL
-const JAVA_API_URL = `${BASE_URL}/api/java-courses`;
+const COURSE_API = `${BASE_URL}/api/courses`;
 
 /**
- * तारीख DD-MM-YYYY फॉरमॅटमध्ये करण्यासाठी
+ * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
  */
-function formatJavaDate(dateStr) {
+function formatDisplayDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; 
-    
+    if (isNaN(date.getTime())) return dateStr; // जर तारीख नसेल तर आहे तसा मजकूर दाखवा
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -144,58 +142,52 @@ function formatJavaDate(dateStr) {
 }
 
 /**
- * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणणे
+ * डेटाबेस मधून Duration आणि Start Date अपडेट करणे
  */
-/**
- * डेटाबेस मधून लेटेस्ट बॅचची माहिती आणणे आणि HTML अपडेट करणे
- */
-async function updateJavaUpcomingBatch() {
+async function updateUpcomingBatch() {
   try {
-    console.log("Fetching Java batch details...");
-    
-    // १. बॅकएंड कडून डेटा मिळवणे
-    const res = await fetch(`${BASE_URL}/api/java-courses`);
-    if (!res.ok) throw new Error("Network response was not ok");
-    
+    const res = await fetch(COURSE_API);
     const courses = await res.json();
     
-    if (!courses || courses.length === 0) {
-        console.warn("डेटाबेसमध्ये डेटा सापडला नाही.");
+    // डेटा तपासणी
+    if (!courses || !Array.isArray(courses) || courses.length === 0) {
+        console.warn("No course data available.");
         return;
     }
 
-    // २. लेटेस्ट बॅच निवडणे (Array मधील शेवटचा आयटम)
+    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
     const latest = courses[courses.length - 1];
-    console.log("Latest Data Received:", latest);
-
-    // ३. तुमच्या HTML मधील स्पॅन्स निवडणे (id="courses" च्या आतील .course-info)
-    const spans = document.querySelectorAll("#courses .course-info span");
     
-    if (spans.length >= 3 && latest) {
-        // तारीख फॉरमॅट करणे (formatJavaDate वर डिफाइन केले असावे)
-        const formattedDate = latest.start_date ? formatJavaDate(latest.start_date) : "TBA";
-
-        // ४. डेटा सेट करणे (innerHTML मुळे जुना डेटा ओव्हरराईट होईल)
-        spans[0].innerHTML = `📅 New Batch Starting On: ${formattedDate}`;
-        spans[1].innerHTML = `⏰ Total Hours: ${latest.hours || "120 Hours"}`;
-        spans[2].innerHTML = `🕒 Batch Time: ${latest.batch_time || "TBA"}`;
+    // HTML मधले Elements शोधणे
+    const courseInfo = document.querySelector("#courses .course-info");
+    
+    if (courseInfo && latest) {
+      const spans = courseInfo.querySelectorAll("span");
+      
+      if (spans.length >= 2) {
+        // 1. Start Date अपडेट करा
+        const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
+        spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
-        console.log("UI Successfully Updated!");
+        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
+        const durationText = latest.duration ? latest.duration : "6 Months";
+        spans[1].innerHTML = `⏱ Duration: ${durationText}`;
+        
+        console.log("Batch Data Updated:", latest);
+      }
     }
   } catch (err) {
-    console.error("Fetch Error (Java Course):", err);
+    console.error("Failed to load upcoming batch info:", err);
   }
 }
 
-// ५. पेज लोड झाल्यावर फंक्शन कॉल करणे
+// पेज लोड झाल्यावर रन करा
 document.addEventListener("DOMContentLoaded", () => {
-    updateJavaUpcomingBatch(); 
-});
-
-// --- INITIALIZE ---
-document.addEventListener("DOMContentLoaded", () => {
+    // 1. Linux बॉक्स ऑटो-ओपन करा
     expandFirstBox(); 
-    updateJavaUpcomingBatch(); // आता हे फंक्शन बरोबर कॉल होईल
+    
+    // 2. डेटाबेस मधून नवीन तारीख आणि ड्युरेशन आणा
+    updateUpcomingBatch(); 
 });
 
 
