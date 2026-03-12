@@ -134,7 +134,7 @@ const COURSE_API = `${BASE_URL}/api/courses`;
 function formatDisplayDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; // जर तारीख नसेल तर आहे तसा मजकूर दाखवा
+    if (isNaN(date.getTime())) return dateStr; 
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -142,7 +142,7 @@ function formatDisplayDate(dateStr) {
 }
 
 /**
- * डेटाबेस मधून Duration आणि Start Date अपडेट करणे
+ * डेटाबेस मधून Start Date, Hours आणि Batch Time अपडेट करणे
  */
 async function updateUpcomingBatch() {
   try {
@@ -155,7 +155,7 @@ async function updateUpcomingBatch() {
         return;
     }
 
-    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
+    // शेवटचा (Latest) कोर्स मिळवणे
     const latest = courses[courses.length - 1];
     
     // HTML मधले Elements शोधणे
@@ -164,16 +164,21 @@ async function updateUpcomingBatch() {
     if (courseInfo && latest) {
       const spans = courseInfo.querySelectorAll("span");
       
-      if (spans.length >= 2) {
+      // आता आपल्याकडे ३ spans आहेत (Date, Hours, Batch Time)
+      if (spans.length >= 3) {
         // 1. Start Date अपडेट करा
         const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
         spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
         
-        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
-        const durationText = latest.duration ? latest.duration : "6 Months";
-        spans[1].innerHTML = `⏱ Duration: ${durationText}`;
+        // 2. Hours अपडेट करा (Property: hours)
+        const hoursText = latest.hours ? latest.hours : "120 Hours";
+        spans[1].innerHTML = `⏰ Total Hours: ${hoursText}`;
+
+        // 3. Batch Time अपडेट करा (Property: batch_time)
+        const batchTime = latest.batch_time ? latest.batch_time : "TBA";
+        spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
         
-        console.log("Batch Data Updated:", latest);
+        console.log("Batch Data Updated successfully:", latest);
       }
     }
   } catch (err) {
@@ -186,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Linux बॉक्स ऑटो-ओपन करा
     expandFirstBox(); 
     
-    // 2. डेटाबेस मधून नवीन तारीख आणि ड्युरेशन आणा
+    // 2. डेटाबेस मधून नवीन माहिती आणा
     updateUpcomingBatch(); 
 });
 
