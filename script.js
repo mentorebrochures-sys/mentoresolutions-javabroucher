@@ -111,22 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // COURSE SECTION - USER PANEL
 // ============================
 
-function toggleFAQ(element) {
-  element.parentElement.classList.toggle("active");
-}
-
-function toggleTopics(element) {
-  element.parentElement.classList.toggle("active");
-}
-
-function expandFirstBox() {
-  const firstBox = document.getElementById("linux-box");
-  if (firstBox && !firstBox.classList.contains("active")) {
-    firstBox.classList.add("active");
-  }
-}
-
-// १. API Endpoints आणि Helper Functions (टॉपला ठेवा)
+// १. API Endpoint (बॅकएंड URL बरोबर असल्याची खात्री करा)
 const JAVA_API_URL = `${BASE_URL}/api/java-courses`;
 
 /**
@@ -143,50 +128,47 @@ function formatJavaDate(dateStr) {
 }
 
 /**
- * Java Database मधून माहिती आणून User Panel अपडेट करणे
+ * Java Database मधून माहिती आणून Upcoming Batch अपडेट करणे
  */
 async function updateJavaUpcomingBatch() {
     try {
         console.log("Java डेटा फेच होत आहे...");
         
-        // Cache टाळण्यासाठी टाइमस्टॅम्प वापरला आहे
+        // Anti-Cache: टाइमस्टॅम्पमुळे दरवेळी नवीन डेटा मिळेल
         const res = await fetch(`${JAVA_API_URL}?t=${new Date().getTime()}`);
         const courses = await res.json();
 
-        // १. डेटा तपासणी
         if (!courses || !Array.isArray(courses) || courses.length === 0) {
             console.warn("Java कोर्सचा डेटा सापडला नाही.");
             return;
         }
 
-        // २. लेटेस्ट कोर्स मिळवणे (शेवटचा इंडेक्स)
+        // लेटेस्ट कोर्स मिळवणे
         const latest = courses[courses.length - 1];
         console.log("मिळालेला डेटा:", latest);
 
-        // ३. HTML मधील .course-info शोधणे
+        // HTML मधील '.course-info' शोधणे
         const courseInfo = document.querySelector("#courses .course-info");
 
         if (courseInfo && latest) {
             const spans = courseInfo.querySelectorAll("span");
 
-            // खात्री करा की HTML मध्ये ३ स्पेन्स आहेत (Date, Hours, Batch Time)
+            // तुमच्या HTML मध्ये ३ स्पेन्स आहेत, म्हणून spans.length >= 3 तपासले आहे
             if (spans.length >= 3) {
                 
-                // १. Start Date (Field: start_date)
+                // १. Start Date अपडेट
                 const startDate = latest.start_date ? formatJavaDate(latest.start_date) : "TBA";
-                spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
+                spans[0].innerHTML = `📅 New Batch Starting On: ${startDate}`;
                 
-                // २. Total Hours (Field: hours) - आधी इथे duration होते, आता hours आहे.
+                // २. Total Hours अपडेट
                 const hoursText = latest.hours ? latest.hours : "120 Hours";
                 spans[1].innerHTML = `⏰ Total Hours: ${hoursText}`;
 
-                // ३. Batch Time (Field: batch_time) - हा नवीन कॉलम आहे.
+                // ३. Batch Time अपडेट
                 const batchTime = latest.batch_time ? latest.batch_time : "TBA";
                 spans[2].innerHTML = `🕒 Batch Time: ${batchTime}`;
                 
                 console.log("Java User Panel यशस्वीरित्या अपडेट झाले!");
-            } else {
-                console.error("HTML मध्ये ३ स्पेन्स सापडले नाहीत. कृपया HTML तपासा.");
             }
         }
     } catch (err) {
@@ -194,12 +176,30 @@ async function updateJavaUpcomingBatch() {
     }
 }
 
-// पेज लोड झाल्यावर रन करा
+// --- UI Functions ---
+
+function toggleFAQ(element) {
+    element.parentElement.classList.toggle("active");
+}
+
+function toggleTopics(element) {
+    element.parentElement.classList.toggle("active");
+}
+
+function expandFirstBox() {
+    // तुमच्या HTML मध्ये आयडी 'linux-box' आहे, तो बरोबर आहे.
+    const firstBox = document.getElementById("linux-box");
+    if (firstBox && !firstBox.classList.contains("active")) {
+        firstBox.classList.add("active");
+    }
+}
+
+// --- INITIALIZE ---
 document.addEventListener("DOMContentLoaded", () => {
-    // १. सुरुवातीचा बॉक्स उघडा (उदा. Linux किंवा Java)
-    if (typeof expandFirstBox === "function") expandFirstBox(); 
+    // १. पहिला बॉक्स (Stage One) ऑटोमॅटिक उघडा
+    expandFirstBox(); 
     
-    // २. Java बॅचची माहिती अपडेट करा
+    // २. डेटाबेस मधून लेटेस्ट बॅचची माहिती आणा
     updateJavaUpcomingBatch(); 
 });
 
