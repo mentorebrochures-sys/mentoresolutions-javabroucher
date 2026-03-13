@@ -150,16 +150,15 @@ async function updateUpcomingBatch() {
     const courses = await res.json();
     
     if (Array.isArray(courses) && courses.length > 0) {
-      // १. आयडीनुसार सॉर्ट करा जेणेकरून नवीन डेटा वर येईल
+      // १. नवीनतम डेटा मिळवा
       const latest = courses.sort((a, b) => b.id - a.id)[0];
       
-      console.log("Latest Course Object:", latest);
-
-      // २. HTML एलिमेंट्स मिळवा (IDs बरोबर असल्याची खात्री करा)
+      // २. HTML Elements मिळवा
       const dateSpan = document.getElementById("java-start-date");
       const durationSpan = document.getElementById("java-duration");
+      const timeSpan = document.getElementById("java-batch-time"); // नवीन ID
 
-      // ३. डेटा पेजवर दाखवा
+      // ३. डेटा अपडेट करा
       if (dateSpan) {
         dateSpan.innerHTML = `📅 New Batch Starting On : ${formatDisplayDate(latest.start_date)}`;
       }
@@ -167,10 +166,13 @@ async function updateUpcomingBatch() {
       if (durationSpan) {
         durationSpan.innerHTML = `⏱ Duration: ${latest.duration || "6 Months"}`;
       }
+
+      // बॅच टाइम दाखवा (तुमच्या डेटाबेसमध्ये 'batch_time' हे कॉलम नाव असावे)
+      if (timeSpan) {
+        timeSpan.innerHTML = `⏰ Batch Time: ${latest.batch_time || "Morning/Evening"}`;
+      }
       
-      console.log("✅ UI यशस्वीरित्या अपडेट झाले!");
-    } else {
-      console.warn("डेटाबेस रिकामा आहे!");
+      console.log("✅ Java UI Updated with Batch Time!");
     }
   } catch (err) {
     console.error("Fetch Error:", err);
