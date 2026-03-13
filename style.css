@@ -271,6 +271,10 @@ Banner
 Courses
 ========================= */
 /* ================= GLOBAL RESET ================= */
+/* =========================
+Courses
+========================= */
+/* ================= GLOBAL RESET ================= */
 * {
   margin: 0;
   padding: 0;
@@ -301,26 +305,27 @@ Courses
   word-wrap: break-word;
 }
 
-/* ===== COURSE INFO (Updated for Single Row on Desktop) ===== */
+/* ===== COURSE INFO ===== */
 .course-info {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px; /* Slightly reduced gap to ensure they fit in one row */
+  /* Reduced gap slightly to ensure they fit in one row on smaller desktops */
+  gap: 20px; 
   font-weight: 700;
   margin-bottom: 36px;
-  flex-wrap: nowrap; /* Forces them to stay in one line */
+  flex-wrap: nowrap; /* Forces one row on desktop */
   color: #000;
 }
 
 .course-info span {
-  font-size: clamp(12px, 2vw, 18px); /* Adjusted font scaling */
+  font-size: clamp(12px, 2vw, 18px); /* Adjusted clamp for better fit */
   padding: 10px 20px;
   background: #fffbea;
   border: 2px solid #ffcc00;
   border-radius: 30px;
   text-align: center;
-  white-space: nowrap; /* Prevents text inside spans from breaking */
+  white-space: nowrap; /* Prevents text inside span from wrapping */
 }
 
 /* ===== FAQ CARD ===== */
@@ -444,33 +449,34 @@ Courses
   .main-heading {
     font-size: clamp(32px, 6vw, 39px);
   }
-  
   .course-info {
-    flex-wrap: wrap; /* Allow wrapping on tablets/small laptops */
-    gap: 12px;
+    gap: 10px; /* Tighter gap for tablets */
   }
-
   .course-info span {
-    font-size: clamp(12px, 3.5vw, 16px);
-    padding: 8px 16px;
+    font-size: clamp(10px, 2.5vw, 14px);
+    padding: 8px 12px;
   }
-  
   .faq-header h2 {
     font-size: clamp(14px, 4vw, 20px);
   }
-  
   .faq-header .arrow {
     font-size: clamp(12px, 3vw, 16px);
   }
-  
   .box-header {
     font-size: clamp(13px, 3vw, 16px);
     padding: 12px 16px;
   }
-  
   .topics li {
     font-size: clamp(12px, 3vw, 15px);
     padding: 8px 0;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Allow wrapping only on mobile screens */
+  .course-info {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 
@@ -478,14 +484,11 @@ Courses
   .course-info {
     flex-direction: column;
     gap: 12px;
-    flex-wrap: nowrap;
   }
-  
   .course-info span {
-    width: 90%; /* Increased width for better mobile look */
+    width: 90%; /* Increased width for better mobile appearance */
     text-align: center;
   }
-  
   .box-header {
     flex-direction: column;
     align-items: flex-start;
