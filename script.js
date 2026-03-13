@@ -149,17 +149,31 @@ async function updateUpcomingBatch() {
     const res = await fetch(COURSE_API);
     const courses = await res.json();
     
-    if (courses.length > 0) {
-      const latest = courses[courses.length - 1];
-      console.log("Latest Course Object:", latest); // इथे बघा duration नाव कसं येतंय
+    if (Array.isArray(courses) && courses.length > 0) {
+      // १. आयडीनुसार सॉर्ट करा जेणेकरून नवीन डेटा वर येईल
+      const latest = courses.sort((a, b) => b.id - a.id)[0];
       
-      alert("डेटा सापडला! तारीख आहे: " + latest.start_date); 
+      console.log("Latest Course Object:", latest);
+
+      // २. HTML एलिमेंट्स मिळवा (IDs बरोबर असल्याची खात्री करा)
+      const dateSpan = document.getElementById("java-start-date");
+      const durationSpan = document.getElementById("java-duration");
+
+      // ३. डेटा पेजवर दाखवा
+      if (dateSpan) {
+        dateSpan.innerHTML = `📅 New Batch Starting On : ${formatDisplayDate(latest.start_date)}`;
+      }
+      
+      if (durationSpan) {
+        durationSpan.innerHTML = `⏱ Duration: ${latest.duration || "6 Months"}`;
+      }
+      
+      console.log("✅ UI यशस्वीरित्या अपडेट झाले!");
     } else {
-      alert("डेटाबेस रिकामा आहे!");
+      console.warn("डेटाबेस रिकामा आहे!");
     }
   } catch (err) {
     console.error("Fetch Error:", err);
-    alert("API कॉल फेल झाला!");
   }
 }
 
