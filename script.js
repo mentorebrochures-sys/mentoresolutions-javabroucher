@@ -126,7 +126,7 @@ function expandFirstBox() {
   }
 }
 
-const COURSE_API = `${BASE_URL}/api/java_courses`;
+const COURSE_API = `${BASE_URL}/api/java-courses`;
 
 /**
  * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
