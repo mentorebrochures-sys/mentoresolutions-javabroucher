@@ -310,7 +310,6 @@ Courses
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Reduced gap slightly to ensure they fit in one row on smaller desktops */
   gap: 20px; 
   font-weight: 700;
   margin-bottom: 36px;
@@ -319,13 +318,13 @@ Courses
 }
 
 .course-info span {
-  font-size: clamp(12px, 2vw, 18px); /* Adjusted clamp for better fit */
+  font-size: clamp(12px, 2vw, 18px);
   padding: 10px 20px;
   background: #fffbea;
   border: 2px solid #ffcc00;
   border-radius: 30px;
   text-align: center;
-  white-space: nowrap; /* Prevents text inside span from wrapping */
+  white-space: nowrap; 
 }
 
 /* ===== FAQ CARD ===== */
@@ -450,49 +449,51 @@ Courses
     font-size: clamp(32px, 6vw, 39px);
   }
   .course-info {
-    gap: 10px; /* Tighter gap for tablets */
+    gap: 12px;
   }
   .course-info span {
-    font-size: clamp(10px, 2.5vw, 14px);
-    padding: 8px 12px;
-  }
-  .faq-header h2 {
-    font-size: clamp(14px, 4vw, 20px);
-  }
-  .faq-header .arrow {
-    font-size: clamp(12px, 3vw, 16px);
-  }
-  .box-header {
-    font-size: clamp(13px, 3vw, 16px);
-    padding: 12px 16px;
-  }
-  .topics li {
-    font-size: clamp(12px, 3vw, 15px);
-    padding: 8px 0;
+    font-size: 14px;
+    padding: 8px 15px;
   }
 }
 
 @media (max-width: 600px) {
-  /* Allow wrapping only on mobile screens */
   .course-info {
     flex-wrap: wrap;
     justify-content: center;
+    gap: 10px;
   }
 }
 
+/* Targeted Mobile view (250px to 480px) */
 @media (max-width: 480px) {
   .course-info {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    margin-bottom: 24px;
   }
   .course-info span {
-    width: 90%; /* Increased width for better mobile appearance */
-    text-align: center;
+    width: 100%; /* Spans take full width for better touch targets */
+    max-width: 280px; /* Limits width so it doesn't look too stretched on wide phones */
+    font-size: 13px;
+    padding: 10px;
+    white-space: normal; /* Allows text to wrap if the screen is extremely narrow (near 250px) */
+    border-radius: 12px; /* Slightly less rounded for a cleaner look on mobile */
   }
   .box-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+  }
+}
+
+/* Extra small screen adjustment */
+@media (max-width: 320px) {
+  .main-heading {
+    font-size: 24px;
+  }
+  .container {
+    padding: 12px;
   }
 }
 
