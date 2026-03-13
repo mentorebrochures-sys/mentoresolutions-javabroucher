@@ -1,5 +1,5 @@
 // Backend Base URL
-const BASE_URL = "https://mentoresolutions-java-backend.vercel.app/";
+const BASE_URL = "https://mentoresolutions-java-backend.vercel.app";
 const CERT_API = `${BASE_URL}/api/certificates`;
 
 // ट्रॅकिंगसाठी
