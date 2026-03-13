@@ -149,35 +149,30 @@ async function updateUpcomingBatch() {
     const res = await fetch(COURSE_API);
     const courses = await res.json();
     
-    // डेटा तपासणी
-    if (!courses || !Array.isArray(courses) || courses.length === 0) {
-        console.warn("No course data available.");
-        return;
-    }
+    if (!courses || courses.length === 0) return;
 
-    // शेवटचा (Latest) कोर्स मिळवणे (ID नुसार सॉर्ट असल्यास उत्तम, अन्यथा शेवटचा इंडेक्स)
-    const latest = courses[courses.length - 1];
+    // आयडीनुसार सर्वात नवीन डेटा निवडा
+    const latest = courses.sort((a, b) => b.id - a.id)[0];
     
-    // HTML मधले Elements शोधणे
-    const courseInfo = document.querySelector("#courses .course-info");
-    
-    if (courseInfo && latest) {
-      const spans = courseInfo.querySelectorAll("span");
-      
-      if (spans.length >= 2) {
-        // 1. Start Date अपडेट करा
-        const startDate = latest.start_date ? formatDisplayDate(latest.start_date) : "TBA";
-        spans[0].innerHTML = `📅 New Batch Starting On : ${startDate}`;
-        
-        // 2. Duration अपडेट करा (येथे नीट लक्ष द्या: latest.duration हे नाव DB कोलमशी जुळतेय का ते तपासा)
-        const durationText = latest.duration ? latest.duration : "6 Months";
-        spans[1].innerHTML = `⏱ Duration: ${durationText}`;
-        
-        console.log("Batch Data Updated:", latest);
+    // HTML मधील IDs निवडा
+    const dateSpan = document.getElementById("java-start-date");
+    const durationSpan = document.getElementById("java-duration");
+
+    if (latest) {
+      // १. तारीख दाखवा
+      if (dateSpan) {
+        dateSpan.innerHTML = `📅 New Batch Starting On : ${formatDisplayDate(latest.start_date)}`;
       }
+      
+      // २. ड्युरेशन दाखवा
+      if (durationSpan) {
+        durationSpan.innerHTML = `⏱ Duration: ${latest.duration || "6 Months"}`;
+      }
+      
+      console.log("Java UI Updated with ID based selection!");
     }
   } catch (err) {
-    console.error("Failed to load upcoming batch info:", err);
+    console.error("Failed to update UI:", err);
   }
 }
 
