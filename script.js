@@ -434,8 +434,8 @@ async function syncPAPData() {
                 // नवीन 'step' div तयार करा
                 const stepDiv = document.createElement('div');
                 
-                // ॲडमिनमधील स्टेटस 'danger' असेल तर 'danger' क्लास लावा
-                stepDiv.className = `step ${step.status === 'danger' ? 'danger' : ''}`;
+                // बदल: इथून status वरील कंडिशन काढून टाकली आहे
+                stepDiv.className = "step";
 
                 stepDiv.innerHTML = `
                     <div class="dot"></div>
@@ -456,9 +456,9 @@ async function syncPAPData() {
 }
 
 // ------------------------------
-// INITIAL LOAD (Existing Block मध्ये ॲड करा)
+// INITIAL LOAD
 // ------------------------------
 document.addEventListener("DOMContentLoaded", () => {
-    // तुमचे इतर फंक्शन्स इथे आधीच असतील...
+    // तुमचे इतर फंक्शन्स (loadCertificates, updateUpcomingBatch इ.) आधीच असतील
     syncPAPData(); 
 });
