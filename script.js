@@ -368,6 +368,43 @@ window.addEventListener("load", async () => {
 });
 
 
+async function loadUserPAPPolicy() {
+        const timeline = document.getElementById('user-pap-timeline');
+        // Update the URL to your actual deployed backend URL
+        try {
+            const response = await fetch(BASE_URL);
+            const data = await response.json();
+
+            // Only update if data is received to avoid showing an empty screen
+            if (data && data.length > 0) {
+                timeline.innerHTML = ''; // Clear existing static content
+
+                data.forEach(step => {
+                    const stepDiv = document.createElement('div');
+                    
+                    // Maintain your layout: add 'danger' class if status is danger
+                    stepDiv.className = `step ${step.status === 'danger' ? 'danger' : ''}`;
+
+                    stepDiv.innerHTML = `
+                        <div class="dot"></div>
+                        <div class="pap-content">
+                            <h3>${step.title}</h3>
+                            <p>${step.description}</p>
+                        </div>
+                    `;
+                    timeline.appendChild(stepDiv);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch PAP steps:', error);
+            // If API fails, the static HTML provided above remains visible
+        }
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', loadUserPAPPolicy);
+
+
 // CONTACT JS
 // ===============================
 // USER PANEL – CONTACT (FOOTER) JS
