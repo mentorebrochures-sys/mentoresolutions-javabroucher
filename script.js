@@ -412,3 +412,53 @@ document.addEventListener("DOMContentLoaded", loadFooterContact);
 // ------------------------------
 
 
+// ==========================================
+// PAY AFTER PLACEMENT (PAP) - USER PANEL JS
+// ==========================================
+const PAP_API_URL = `${BASE_URL}/api/pap-steps`;
+
+async function syncPAPData() {
+    const timelineContainer = document.getElementById('user-pap-timeline');
+    
+    // जर पेजवर टाइमलाईन कंटेनर नसेल तर फंक्शन थांबवा
+    if (!timelineContainer) return;
+
+    try {
+        const response = await fetch(PAP_API_URL);
+        const adminData = await response.json();
+
+        // जर डेटा मिळाला असेल तर स्टॅटिक डेटाच्या खाली ॲड करा
+        if (adminData && Array.isArray(adminData) && adminData.length > 0) {
+            
+            adminData.forEach(step => {
+                // नवीन 'step' div तयार करा
+                const stepDiv = document.createElement('div');
+                
+                // ॲडमिनमधील स्टेटस 'danger' असेल तर 'danger' क्लास लावा
+                stepDiv.className = `step ${step.status === 'danger' ? 'danger' : ''}`;
+
+                stepDiv.innerHTML = `
+                    <div class="dot"></div>
+                    <div class="pap-content">
+                        <h3>${step.title}</h3>
+                        <p>${step.description}</p>
+                    </div>
+                `;
+
+                // स्टॅटिक डेटाच्या खाली ॲड करण्यासाठी appendChild वापरा
+                timelineContainer.appendChild(stepDiv);
+            });
+            console.log("✅ PAP Policy Steps synced from Admin!");
+        }
+    } catch (error) {
+        console.error("❌ PAP Data sync error:", error);
+    }
+}
+
+// ------------------------------
+// INITIAL LOAD (Existing Block मध्ये ॲड करा)
+// ------------------------------
+document.addEventListener("DOMContentLoaded", () => {
+    // तुमचे इतर फंक्शन्स इथे आधीच असतील...
+    syncPAPData(); 
+});
