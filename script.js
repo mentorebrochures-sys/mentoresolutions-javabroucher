@@ -411,30 +411,25 @@ document.addEventListener("DOMContentLoaded", loadFooterContact);
 // call loadFooterContact() from admin JS
 // ------------------------------
 
-// बॅकएंड URL (तुमचा Vercel चा URL)
-const BASE_URL = `https://mentoresolutions-java-backend.vercel.app`;
 
-async function loadPAPTimeline() {
+async function syncPAPData() {
     const timelineContainer = document.getElementById('user-pap-timeline');
     
-    // जर पेजवर टाइमलाईन कंटेनर नसेल तर फंक्शन थांबवा
+    // जर पेजवर टाइमलाईन कंटेनर नसेल तर थांबवा
     if (!timelineContainer) return;
 
     try {
-        // API कडून डेटा मागवणे
         const response = await fetch(`${BASE_URL}/api/pap-steps`);
-        const data = await response.json();
+        const adminData = await response.json();
 
-        // जर डेटा मिळाला असेल तर प्रोसेस करा
-        if (data && data.length > 0) {
-            // जुना स्टॅटिक डेटा साफ करा
-            timelineContainer.innerHTML = '';
-
-            data.forEach(step => {
+        // जर डेटा मिळाला असेल तर स्टॅटिक डेटाच्या खाली ॲड करा
+        if (adminData && adminData.length > 0) {
+            
+            adminData.forEach(step => {
                 // नवीन 'step' div तयार करा
                 const stepDiv = document.createElement('div');
                 
-                // जर status 'danger' असेल तर 'danger' क्लास लावा, नाहीतर फक्त 'step'
+                // ॲडमिनमधील स्टेटस 'danger' असेल तर क्लास लावा
                 stepDiv.className = `step ${step.status === 'danger' ? 'danger' : ''}`;
 
                 stepDiv.innerHTML = `
@@ -445,21 +440,15 @@ async function loadPAPTimeline() {
                     </div>
                 `;
 
-                // कंटेनरमध्ये ॲड करा
+                // timelineContainer.innerHTML = '' न करता थेट append करा 
+                // जेणेकरून जुना डेटा राहील आणि नवीन डेटा खाली येईल
                 timelineContainer.appendChild(stepDiv);
             });
         }
     } catch (error) {
-        console.error("PAP Timeline लोड करताना एरर आली:", error);
-        // एरर आल्यास काहीतरी मेसेज दाखवू शकता (पर्यायी)
-        timelineContainer.innerHTML = '<p style="color: grey; text-align: center;">Unable to load policy steps at the moment.</p>';
+        console.error("बॅकएंडवरून डेटा फेच करताना एरर आली:", error);
     }
 }
 
-// पेज लोड झाल्यावर फंक्शन रन करा
-document.addEventListener('DOMContentLoaded', loadPAPTimeline);
-
-
-
-
-
+// पेज लोड झाल्यावर रन करा
+document.addEventListener('DOMContentLoaded', syncPAPData);
