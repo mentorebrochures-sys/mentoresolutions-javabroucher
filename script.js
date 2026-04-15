@@ -1,287 +1,465 @@
-// --- 1. GLOBAL CONFIGURATION ---
+// Backend Base URL
 const BASE_URL = `https://mentoresolutions-java-backend.vercel.app`;
+const CERT_API = `${BASE_URL}/api/certificates`;
 
-// API Endpoints
-const API = {
-    CERTIFICATES: `${BASE_URL}/api/certificates`,
-    COURSES: `${BASE_URL}/api/java-courses`,
-    TRAININGS: `${BASE_URL}/api/trainings`,
-    PLACEMENTS: `${BASE_URL}/api/placements`,
-    PAP: `${BASE_URL}/api/pap-steps`,
-    CONTACTS: `${BASE_URL}/api/contacts`
-};
-
-// Tracking
+// ट्रॅकिंगसाठी
 let prevCertIds = [];
 
-// --- 2. UTILITY FUNCTIONS ---
+// Certificates लोड करणे आणि Scrollers मध्ये दाखवणे
+async function loadCertificates() {
+  try {
+    const res = await fetch(CERT_API);
+    const certs = await res.json();
+
+    if (!certs || certs.length === 0) return;
+
+    const scroller1 = document.getElementById("certTrack1");
+    const scroller2 = document.getElementById("certTrack2");
+
+    if (!scroller1 || !scroller2) return;
+
+    // फक्त नवीन सर्टिफिकेट्स फिल्टर करा जे आधी लोड झाले नाहीत
+    const newCerts = certs.filter(c => !prevCertIds.includes(c.id));
+    
+    // जर काहीच नवीन नसेल, तर पुढचे लॉजिक रन करू नका
+    if (newCerts.length === 0) return;
+
+    // नवीन सर्टिफिकेट्स दोन भागात विभागणे
+    const mid = Math.ceil(newCerts.length / 2);
+    const firstHalf = newCerts.slice(0, mid);
+    const secondHalf = newCerts.slice(mid);
+
+    // --- Scroller 1 मध्ये इमेज जोडणे ---
+    firstHalf.forEach(c => {
+      const img = document.createElement("img");
+      // Supabase कडून मिळणारी URL थेट वापरणे
+      img.src = c.image; 
+      img.alt = "Global Certificate";
+      img.classList.add("admin-cert");
+      scroller1.appendChild(img);
+    });
+
+    // --- Scroller 2 मध्ये इमेज जोडणे ---
+    secondHalf.forEach(c => {
+      const img = document.createElement("img");
+      img.src = c.image; 
+      img.alt = "Global Certificate";
+      img.classList.add("admin-cert");
+      scroller2.appendChild(img);
+    });
+
+    // ॲनिमेशन रिसेट आणि क्लोनिंग (Seamless Scroll साठी)
+    refreshScrollerAnimation(scroller1);
+    refreshScrollerAnimation(scroller2);
+
+    // ID ट्रॅकर अपडेट करणे
+    prevCertIds = certs.map(c => c.id);
+
+  } catch (err) {
+    console.error("Error loading certificates:", err);
+  }
+}
+
+// स्क्रोलिंग स्मूथ आणि अपडेटेड ठेवण्यासाठी फंक्शन
+function refreshScrollerAnimation(track) {
+  // 1. आधीचे क्लोन्स काढून टाका (जर असतील तर) जेणेकरून गॅप पडणार नाही
+  // आम्ही फक्त ओरिजिनल इमेजेस ठेवतो आणि पुन्हा क्लोन करतो
+  const originalImages = Array.from(track.querySelectorAll('img:not(.clone)'));
+  track.innerHTML = ''; // पूर्ण साफ करा
+  
+  originalImages.forEach(img => track.appendChild(img)); // ओरिजिनल परत टाका
+  
+  // 2. आता पुन्हा क्लोन करा
+  originalImages.forEach(img => {
+    const clone = img.cloneNode(true);
+    clone.classList.add('clone');
+    track.appendChild(clone);
+  });
+
+  // 3. ॲनिमेशन ड्युरेशन सेट करा
+  const totalWidth = track.scrollWidth / 2;
+  const duration = totalWidth / 40; 
+  track.style.animationDuration = `${duration}s`;
+}
+
+// --- INITIALIZE ---
+document.addEventListener("DOMContentLoaded", () => {
+  // सुरुवातीला लोड करा
+  loadCertificates();
+
+  // दर १० सेकंदाला चेक करा काही नवीन सर्टिफिकेट आले आहे का
+  setInterval(loadCertificates, 10000);
+
+  // टायपिंग इफेक्ट
+  const el = document.querySelector(".banner-tagline");
+  if (el) {
+    const text = el.textContent.trim();
+    el.textContent = "";
+    let index = 0;
+    function type() {
+      if (index < text.length) {
+        el.textContent += text.charAt(index);
+        index++;
+        setTimeout(type, 50);
+      }
+    }
+    type();
+  }
+});
+
+// ============================
+// COURSE SECTION - USER PANEL
+// ============================
+
+function toggleFAQ(element) {
+  element.parentElement.classList.toggle("active");
+}
+
+function toggleTopics(element) {
+  element.parentElement.classList.toggle("active");
+}
+
+function expandFirstBox() {
+  const firstBox = document.getElementById("linux-box");
+  if (firstBox && !firstBox.classList.contains("active")) {
+    firstBox.classList.add("active");
+  }
+}
+
+const COURSE_API = `${BASE_URL}/api/java-courses`;
+
+/**
+ * तारीख DD-MM-YYYY फॉरमॅटमध्ये दाखवण्यासाठी
+ */
 function formatDisplayDate(dateStr) {
     if (!dateStr) return "TBA";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
+    if (isNaN(date.getTime())) return dateStr; // जर तारीख नसेल तर आहे तसा मजकूर दाखवा
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
 }
 
-// --- 3. CORE FUNCTIONS ---
-
-// A. Certificates Scroller
-async function loadCertificates() {
-    try {
-        const res = await fetch(API.CERTIFICATES);
-        const certs = await res.json();
-        if (!certs || certs.length === 0) return;
-
-        const scroller1 = document.getElementById("certTrack1");
-        const scroller2 = document.getElementById("certTrack2");
-        if (!scroller1 || !scroller2) return;
-
-        const newCerts = certs.filter(c => !prevCertIds.includes(c.id));
-        if (newCerts.length === 0) return;
-
-        const mid = Math.ceil(newCerts.length / 2);
-        const halves = [newCerts.slice(0, mid), newCerts.slice(mid)];
-        const tracks = [scroller1, scroller2];
-
-        halves.forEach((half, index) => {
-            half.forEach(c => {
-                const img = document.createElement("img");
-                img.src = c.image;
-                img.alt = "Global Certificate";
-                img.classList.add("admin-cert");
-                tracks[index].appendChild(img);
-            });
-            refreshScrollerAnimation(tracks[index]);
-        });
-
-        prevCertIds = certs.map(c => c.id);
-    } catch (err) { console.error("Certificates Error:", err); }
-}
-
-function refreshScrollerAnimation(track) {
-    const originalImages = Array.from(track.querySelectorAll('img:not(.clone)'));
-    track.innerHTML = '';
-    originalImages.forEach(img => track.appendChild(img));
-    originalImages.forEach(img => {
-        const clone = img.cloneNode(true);
-        clone.classList.add('clone');
-        track.appendChild(clone);
-    });
-    const duration = (track.scrollWidth / 2) / 40;
-    track.style.animationDuration = `${duration}s`;
-}
-
-// B. Upcoming Course Batch
+/**
+ * डेटाबेस मधून Duration आणि Start Date अपडेट करणे
+ */
 async function updateUpcomingBatch() {
-    try {
-        const res = await fetch(API.COURSES);
-        const courses = await res.json();
-        if (Array.isArray(courses) && courses.length > 0) {
-            const latest = courses.sort((a, b) => b.id - a.id)[0];
-            const updates = {
-                "java-start-date": `📅 New Batch Starting On : ${formatDisplayDate(latest.start_date)}`,
-                "java-duration": `⏱ Duration: ${latest.duration || "6 Months"}`,
-                "java-batch-time": `⏰ Batch Time: ${latest.batch_time || "Morning/Evening"}`
-            };
-            for (const [id, val] of Object.entries(updates)) {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = val;
-            }
-        }
-    } catch (err) { console.error("Batch Update Error:", err); }
-}
-
-// C. Trainings Slider
-async function loadTrainings() {
-    const sliderTrack = document.querySelector(".training-track");
-    if (!sliderTrack) return;
-
-    try {
-        const res = await fetch(API.TRAININGS);
-        const trainings = await res.json();
-        trainings.forEach(t => {
-            const card = document.createElement("div");
-            card.className = "training-card";
-            card.innerHTML = `<i class="${t.icon}"></i><h4>${t.name}</h4>`;
-            sliderTrack.appendChild(card);
-        });
-
-        setTimeout(() => initTrainingSlider(sliderTrack), 500);
-    } catch (err) { console.error("Trainings Error:", err); }
-}
-
-function initTrainingSlider(track) {
-    let moveSpeed = 1.5;
-    let currentOffset = 0;
-    const baseItems = Array.from(track.children);
-    baseItems.forEach(item => track.appendChild(item.cloneNode(true)));
+  try {
+    const res = await fetch(COURSE_API);
+    const courses = await res.json();
     
+    if (Array.isArray(courses) && courses.length > 0) {
+      // १. नवीनतम डेटा मिळवा
+      const latest = courses.sort((a, b) => b.id - a.id)[0];
+      
+      // २. HTML Elements मिळवा
+      const dateSpan = document.getElementById("java-start-date");
+      const durationSpan = document.getElementById("java-duration");
+      const timeSpan = document.getElementById("java-batch-time"); // नवीन ID
+
+      // ३. डेटा अपडेट करा
+      if (dateSpan) {
+        dateSpan.innerHTML = `📅 New Batch Starting On : ${formatDisplayDate(latest.start_date)}`;
+      }
+      
+      if (durationSpan) {
+        durationSpan.innerHTML = `⏱ Duration: ${latest.duration || "6 Months"}`;
+      }
+
+      // बॅच टाइम दाखवा (तुमच्या डेटाबेसमध्ये 'batch_time' हे कॉलम नाव असावे)
+      if (timeSpan) {
+        timeSpan.innerHTML = `⏰ Batch Time: ${latest.batch_time || "Morning/Evening"}`;
+      }
+      
+      console.log("✅ Java UI Updated with Batch Time!");
+    }
+  } catch (err) {
+    console.error("Fetch Error:", err);
+  }
+}
+
+// पेज लोड झाल्यावर रन करा
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Linux बॉक्स ऑटो-ओपन करा
+    expandFirstBox(); 
+    
+    // 2. डेटाबेस मधून नवीन तारीख आणि ड्युरेशन आणा
+    updateUpcomingBatch(); 
+});
+
+
+// ===============================
+// Training Js (Updated)
+// ===============================
+document.addEventListener("DOMContentLoaded", async () => {
+  const sliderTrack = document.querySelector(".training-track");
+  const sliderViewport = document.querySelector(".training-scroll");
+  const API_URL = `${BASE_URL}/api/trainings`;
+  
+  let moveSpeed = 1.5;
+  let currentOffset = 0;
+
+  // तारीख DD-MM-YYYY फॉरमॅटमध्ये करण्यासाठी फंक्शन
+  function formatDate(dateStr) {
+    if (!dateStr) return "TBA";
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  // ================= BACKEND TRAININGS FETCH =================
+  try {
+    const res = await fetch(API_URL);
+    const trainings = await res.json();
+    
+    trainings.forEach(t => {
+      const card = document.createElement("div");
+      card.className = "training-card";
+      
+      // बदल: इथे t.start_date आणि t.duration वापरले आहे
+      card.innerHTML = `
+        <i class="${t.icon}"></i>
+        <h4>${t.name}</h4>
+      `;
+      sliderTrack.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Error loading trainings from DB:", err);
+  }
+
+  // ================= DUPLICATE CARDS & SLIDER LOGIC =================
+  // डेटा लोड झाल्यावर विड्थ मोजण्यासाठी थोडा वेळ (Dely) द्यावा लागतो
+  setTimeout(() => {
+    const baseItems = Array.from(sliderTrack.children);
+    baseItems.forEach(item => sliderTrack.appendChild(item.cloneNode(true)));
+
     let baseWidth = 0;
     baseItems.forEach(item => (baseWidth += item.offsetWidth + 26));
 
-    function run() {
-        currentOffset -= moveSpeed;
-        if (Math.abs(currentOffset) >= baseWidth) currentOffset = 0;
-        track.style.transform = `translateX(${currentOffset}px)`;
-        requestAnimationFrame(run);
+    function runAutoSlider() {
+      currentOffset -= moveSpeed;
+      if (Math.abs(currentOffset) >= baseWidth) currentOffset = 0;
+      sliderTrack.style.transform = `translateX(${currentOffset}px)`;
+      requestAnimationFrame(runAutoSlider);
     }
-    run();
+    runAutoSlider();
+  }, 500); 
 
-    const viewport = document.querySelector(".training-scroll");
-    if (viewport) {
-        viewport.addEventListener("mouseenter", () => (moveSpeed = 0));
-        viewport.addEventListener("mouseleave", () => (moveSpeed = 1.5));
-    }
-}
-
-// D. Placements Scroll
-async function loadPlacements() {
-    const scrollDown = document.getElementById("scrollDown");
-    const scrollUp = document.getElementById("scrollUp");
-    if (!scrollDown || !scrollUp) return;
-
-    try {
-        const res = await fetch(API.PLACEMENTS);
-        const data = await res.json();
-        data.sort((a, b) => a.name.localeCompare(b.name));
-
-        const createCard = (p) => `
-            <div class="placement-card">
-                <img src="${p.image}" alt="${p.name}">
-                <div class="card-info">
-                    <h4>${p.name}</h4><span>${p.role}</span><p>${p.company}</p><strong>${p.pkg}</strong>
-                </div>
-            </div>`;
-
-        const half = Math.ceil(data.length / 2);
-        const downContent = scrollDown.querySelector(".scroll-content");
-        const upContent = scrollUp.querySelector(".scroll-content");
-
-        data.slice(0, half).forEach(p => downContent.innerHTML += createCard(p));
-        data.slice(half).forEach(p => upContent.innerHTML += createCard(p));
-
-        [scrollDown, scrollUp].forEach(s => {
-            const content = s.querySelector(".scroll-content");
-            content.innerHTML += content.innerHTML;
-        });
-        initPlacementAnimation(scrollDown, scrollUp);
-    } catch (err) { console.error("Placements Error:", err); }
-}
-
-function initPlacementAnimation(scrollDown, scrollUp) {
-    let speed = 1, pauseDown = false, pauseUp = false;
-
-    const setupEvents = (el, setFlag) => {
-        if (!el) return;
-        ["mouseenter", "touchstart"].forEach(ev => el.addEventListener(ev, () => setFlag(true)));
-        ["mouseleave", "touchend"].forEach(ev => el.addEventListener(ev, () => setFlag(false)));
-    };
-
-    setupEvents(scrollDown, (v) => pauseDown = v);
-    setupEvents(scrollUp, (v) => pauseUp = v);
-
-    function animate() {
-        const isDesktop = window.innerWidth > 768;
-        if (isDesktop) {
-            if (!pauseDown) {
-                scrollDown.scrollTop += speed;
-                if (scrollDown.scrollTop >= scrollDown.scrollHeight / 2) scrollDown.scrollTop = 0;
-            }
-            if (!pauseUp) {
-                scrollUp.scrollTop -= speed;
-                if (scrollUp.scrollTop <= 0) scrollUp.scrollTop = scrollUp.scrollHeight / 2;
-            }
-        } else {
-            if (!pauseDown) {
-                scrollDown.scrollLeft += speed;
-                if (scrollDown.scrollLeft >= scrollDown.scrollWidth / 2) scrollDown.scrollLeft = 0;
-            }
-            if (!pauseUp) {
-                scrollUp.scrollLeft -= speed;
-                if (scrollUp.scrollLeft <= 0) scrollUp.scrollLeft = scrollUp.scrollWidth / 2;
-            }
-        }
-        requestAnimationFrame(animate);
-    }
-    animate();
-}
-
-// E. PAP Policy
-async function loadPAPPolicy() {
-    const timeline = document.getElementById('user-pap-timeline');
-    if (!timeline) return;
-
-    try {
-        const res = await fetch(API.PAP);
-        const data = await res.json();
-        if (data && data.length > 0) {
-            timeline.innerHTML = '';
-            data.forEach(step => {
-                const div = document.createElement('div');
-                div.className = `step ${step.status === 'danger' ? 'danger' : ''}`;
-                div.innerHTML = `<div class="dot"></div><div class="pap-content"><h3>${step.title}</h3><p>${step.description}</p></div>`;
-                timeline.appendChild(div);
-            });
-        }
-    } catch (err) { console.error("PAP Error:", err); }
-}
-
-// F. Footer Contact
-async function loadFooterContact() {
-    try {
-        const res = await fetch(API.CONTACTS);
-        const data = await res.json();
-        if (!data || !data.length) return;
-        const contact = data[data.length - 1];
-
-        const updates = {
-            footerMobile: `<i class="fas fa-phone"></i> ${contact.mobile || ""}`,
-            footerEmail: `<i class="fas fa-envelope"></i> ${contact.email || ""}`
-        };
-        for (const [id, val] of Object.entries(updates)) {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = val;
-        }
-
-        const insta = document.getElementById("footerInstagram");
-        const linkedin = document.getElementById("footerLinkedIn");
-        if (insta) { insta.href = contact.instagram || "#"; insta.style.visibility = contact.instagram ? "visible" : "hidden"; }
-        if (linkedin) { linkedin.href = contact.linkedin || "#"; linkedin.style.visibility = contact.linkedin ? "visible" : "hidden"; }
-    } catch (err) { console.error("Footer Error:", err); }
-}
-
-// --- 4. INITIALIZATION ---
-document.addEventListener("DOMContentLoaded", () => {
-    // Run all loads
-    loadCertificates();
-    updateUpcomingBatch();
-    loadTrainings();
-    loadPlacements();
-    loadPAPPolicy();
-    loadFooterContact();
-
-    // Secondary UI logics
-    const linuxBox = document.getElementById("linux-box");
-    if (linuxBox) linuxBox.classList.add("active");
-
-    // Interval for dynamic certs
-    setInterval(loadCertificates, 10000);
-
-    // Typing Effect
-    const tagline = document.querySelector(".banner-tagline");
-    if (tagline) {
-        const text = tagline.textContent.trim();
-        tagline.textContent = "";
-        let i = 0;
-        const type = () => {
-            if (i < text.length) { tagline.textContent += text.charAt(i++); setTimeout(type, 50); }
-        };
-        type();
-    }
+  sliderViewport.addEventListener("mouseenter", () => (moveSpeed = 0));
+  sliderViewport.addEventListener("mouseleave", () => (moveSpeed = 1.5));
 });
 
-// UI Toggles
-function toggleFAQ(el) { el.parentElement.classList.toggle("active"); }
-function toggleTopics(el) { el.parentElement.classList.toggle("active"); }
+/* ===============================
+   USER PANEL – Placements Scroll
+================================ */
+async function loadPlacementsFromBackend() {
+  const scrollDown = document.getElementById("scrollDown");
+  const scrollUp = document.getElementById("scrollUp");
+  if (!scrollDown || !scrollUp) return;
+  try {
+    const res = await fetch(`${BASE_URL}/api/placements`);
+    const data = await res.json();
+    
+    // नावानुसार सॉर्टिंग
+    data.sort((a, b) => a.name.localeCompare(b.name));
+    
+    const scrollDownContent = scrollDown.querySelector(".scroll-content");
+    const scrollUpContent = scrollUp.querySelector(".scroll-content");
+
+    // Helper to create card HTML
+    // बदल: p.package ऐवजी p.pkg वापरले आणि इमेजसाठी p.image
+    const createCard = (p) => `
+      <div class="placement-card">
+        <img src="${p.image}" alt="${p.name}">
+        <div class="card-info">
+          <h4>${p.name}</h4>
+          <span>${p.role}</span>
+          <p>${p.company}</p>
+          <strong>${p.pkg}</strong>
+        </div>
+      </div>
+    `;
+
+    // डेटा दोन भागात विभागून Append करणे (+= मुळे आधीचा डेटा जाणार नाही)
+    const half = Math.ceil(data.length / 2);
+    data
+      .slice(0, half)
+      .forEach((p) => (scrollDownContent.innerHTML += createCard(p)));
+    data
+      .slice(half)
+      .forEach((p) => (scrollUpContent.innerHTML += createCard(p)));
+
+    // डेटा ॲपेंड झाल्यानंतर क्लोनिंग करणे जेणेकरून स्क्रोल नीट होईल
+    duplicate(scrollDown);
+    duplicate(scrollUp);
+
+  } catch (err) {
+    console.error("Error fetching placements:", err);
+  }
+}
+
+/* ===============================
+   Scroll + Pause Logic
+================================ */
+// ड्युप्लिकेट फंक्शन जेणेकरून स्क्रोलिंग मध्ये गॅप येणार नाही
+const duplicate = (scroller) => {
+  const content = scroller.querySelector(".scroll-content");
+  if (content && !content.dataset.duplicated) {
+    content.innerHTML += content.innerHTML;
+    content.dataset.duplicated = "true"; 
+  }
+};
+
+window.addEventListener("load", async () => {
+  // बॅकएंड डेटा लोड करा
+  await loadPlacementsFromBackend();
+  
+  const scrollDown = document.getElementById("scrollDown");
+  const scrollUp = document.getElementById("scrollUp");
+  const speed = 1; 
+  let pauseDown = false;
+  let pauseUp = false;
+
+  // Pause events
+  [
+    { el: scrollDown, flag: (val) => (pauseDown = val) },
+    { el: scrollUp, flag: (val) => (pauseUp = val) },
+  ].forEach(({ el, flag }) => {
+    if(!el) return;
+    el.addEventListener("mouseenter", () => flag(true));
+    el.addEventListener("mouseleave", () => flag(false));
+    el.addEventListener("click", () => flag(!pauseDown));
+    el.addEventListener("touchstart", () => flag(true));
+    el.addEventListener("touchend", () => flag(false));
+  });
+
+  // Animation loop
+  function animate() {
+    const isDesktop = window.innerWidth > 768;
+    if (isDesktop) {
+      if (!pauseDown && scrollDown) {
+        scrollDown.scrollTop += speed;
+        if (scrollDown.scrollTop >= scrollDown.scrollHeight / 2)
+          scrollDown.scrollTop = 0;
+      }
+      if (!pauseUp && scrollUp) {
+        scrollUp.scrollTop -= speed;
+        if (scrollUp.scrollTop <= 0)
+          scrollUp.scrollTop = scrollUp.scrollHeight / 2;
+      }
+    } else {
+      if (!pauseDown && scrollDown) {
+        scrollDown.scrollLeft += speed;
+        if (scrollDown.scrollLeft >= scrollDown.scrollWidth / 2)
+          scrollDown.scrollLeft = 0;
+      }
+      if (!pauseUp && scrollUp) {
+        scrollUp.scrollLeft -= speed;
+        if (scrollUp.scrollLeft <= 0)
+          scrollUp.scrollLeft = scrollUp.scrollWidth / 2;
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+});
+
+
+// CONTACT JS
+// ===============================
+// USER PANEL – CONTACT (FOOTER) JS
+// ===============================
+const CONTACT_API = `${BASE_URL}/api/contacts`;
+async function loadFooterContact() {
+  try {
+    const res = await fetch(CONTACT_API);
+    const data = await res.json();
+    if (!data || !data.length) return;
+    // Always take latest contact
+    const contact = data[data.length - 1];
+    // Update footer phone & email
+    const footerMobile = document.getElementById("footerMobile");
+    const footerEmail = document.getElementById("footerEmail");
+    if (footerMobile)
+      footerMobile.innerHTML = `<i class="fas fa-phone"></i> ${contact.mobile || ""}`;
+    if (footerEmail)
+      footerEmail.innerHTML = `<i class="fas fa-envelope"></i> ${contact.email || ""}`;
+    // Update social links
+    const insta = document.getElementById("footerInstagram");
+    const linkedin = document.getElementById("footerLinkedIn");
+    if (insta) {
+      insta.href = contact.instagram || "#";
+      insta.style.visibility = contact.instagram ? "visible" : "hidden";
+    }
+    if (linkedin) {
+      linkedin.href = contact.linkedin || "#";
+      linkedin.style.visibility = contact.linkedin ? "visible" : "hidden";
+    }
+  } catch (err) {
+    console.error("Footer contact load failed:", err);
+  }
+}
+// ------------------------------
+// INITIAL LOAD
+// ------------------------------
+document.addEventListener("DOMContentLoaded", loadFooterContact);
+// ------------------------------
+// OPTIONAL: live refresh after admin update
+// call loadFooterContact() from admin JS
+// ------------------------------
+
+// बॅकएंड URL (तुमचा Vercel चा URL)
+const BASE_URL = `https://mentoresolutions-java-backend.vercel.app`;
+
+async function loadPAPTimeline() {
+    const timelineContainer = document.getElementById('user-pap-timeline');
+    
+    // जर पेजवर टाइमलाईन कंटेनर नसेल तर फंक्शन थांबवा
+    if (!timelineContainer) return;
+
+    try {
+        // API कडून डेटा मागवणे
+        const response = await fetch(`${BASE_URL}/api/pap-steps`);
+        const data = await response.json();
+
+        // जर डेटा मिळाला असेल तर प्रोसेस करा
+        if (data && data.length > 0) {
+            // जुना स्टॅटिक डेटा साफ करा
+            timelineContainer.innerHTML = '';
+
+            data.forEach(step => {
+                // नवीन 'step' div तयार करा
+                const stepDiv = document.createElement('div');
+                
+                // जर status 'danger' असेल तर 'danger' क्लास लावा, नाहीतर फक्त 'step'
+                stepDiv.className = `step ${step.status === 'danger' ? 'danger' : ''}`;
+
+                stepDiv.innerHTML = `
+                    <div class="dot"></div>
+                    <div class="pap-content">
+                        <h3>${step.title}</h3>
+                        <p>${step.description}</p>
+                    </div>
+                `;
+
+                // कंटेनरमध्ये ॲड करा
+                timelineContainer.appendChild(stepDiv);
+            });
+        }
+    } catch (error) {
+        console.error("PAP Timeline लोड करताना एरर आली:", error);
+        // एरर आल्यास काहीतरी मेसेज दाखवू शकता (पर्यायी)
+        timelineContainer.innerHTML = '<p style="color: grey; text-align: center;">Unable to load policy steps at the moment.</p>';
+    }
+}
+
+// पेज लोड झाल्यावर फंक्शन रन करा
+document.addEventListener('DOMContentLoaded', loadPAPTimeline);
+
+
+
+
+
